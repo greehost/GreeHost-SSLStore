@@ -1,0 +1,111 @@
+#!/usr/bin/env perl
+use warnings;
+use strict;
+use GreeHost::SSLStore;
+use GreeHost::SSLStore::Domain;
+use Getopt::Long;
+use Pod::Usage;
+
+my $opts = {
+    name   => '',
+    domain => [],
+    key    => '',
+    help   => 0,
+};
+
+GetOptions( $opts, qw(
+    name=s
+    domain=s@
+    key=s
+    help!
+));
+my ( $cmd ) = @ARGV;
+
+if ( ( $cmd and $cmd =~ /^help$/i ) || ( $opts->{help} ) ) {
+    pod2usage(
+        -exitval  => 0,
+        -sections => 'USAGE|ARGUMENTS',
+        -verbose  => 99,
+    );
+}
+
+if ( my $code = __PACKAGE__->can( "_do_$cmd" ) ) {
+    $code->();
+    exit 0;
+} else {
+    pod2usage(
+        -message  => "No such command: $cmd", 
+        -exitval  => 1,
+        -sections => 'USAGE|ARGUMENTS',
+        -verbose  => 99,
+    );
+}
+
+sub _get_domain {
+    my ( $args ) = @_;
+    die "Error: name is a required option\n"
+        unless $args->{name};
+
+    die "Error: key is a required option\n"
+        unless $args->{key};
+
+    return GreeHost::SSLStore::Domain->new(
+        name           => $args->{name},
+        domains        => $args->{domain},
+        dns_linode_key => $args->{key},
+    );
+}
+
+sub _do_add {
+    _get_domain($opts)->install;
+}
+
+sub _do_list {
+    opendir( DIR, '/opt/greehost/sslstore/domains/' );
+    foreach my $domain ( readdir( DIR ) ) {
+        next if $domain =~ /^\./;
+        my $status = _get_domain( { name => $domain, key => 1 } )->status;
+        next unless $status;
+
+        printf( "%-24s %s %s\n", $status->{name}, $status->{expire}, join(", ", @{$status->{domains}||[]}) );
+    }
+}
+
+sub _do_renew {
+    _get_domain($opts)->update;
+}
+
+sub _do_get {
+    print "You want to get the SSL information for the domain.\n";
+}
+
+=head1 NAME
+
+=head1 USAGE
+
+=head2 greehost-sslstore add
+
+    Add a domain to the SSLStore.
+
+    # Create an SSL cert for example.com, valid for example.com, www.example.com and api.example.com
+    greehost-sslstore add --name example.com --domain www.example.com --domain api.example.com --key [linode_dns_key]
+
+=head2 greehost-sslstore get
+
+    Get the SSL cert information for a domain
+
+    greehost-sslstore get --name example.com
+
+
+=head2 greehost-sslstore renew
+
+    Renew the SSL Certifcate for the domain
+    
+    greehost-sslstore renew --name example.com
+
+=head1 ARGUMENTS
+
+    --name      The top-level domain name for the cert.
+    --domain    Additional domain names
+    --key       Linode DNS API Key
+
