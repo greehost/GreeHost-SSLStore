@@ -10,6 +10,7 @@ my $opts = {
     name   => '',
     domain => [],
     key    => '',
+    email  => '',
     help   => 0,
 };
 
@@ -17,6 +18,7 @@ GetOptions( $opts, qw(
     name=s
     domain=s@
     key=s
+    email=s
     help!
 ));
 my ( $cmd ) = @ARGV;
@@ -62,6 +64,8 @@ sub _get_domain {
         name           => $args->{name},
         domains        => $args->{domain},
         dns_linode_key => $args->{key},
+
+        ( $opts->{email} ? ( email_address => $opts->{email} ) : () ),
     );
 }
 

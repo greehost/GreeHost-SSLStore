@@ -43,6 +43,10 @@ has domain_root => (
     },
 );
 
+has email_address => (
+    is => 'ro',
+);
+
 has dns_credential_file_contents => (
     is      => 'ro',
     lazy    => 1,
@@ -76,10 +80,11 @@ sub install {
     make_path( $self->domain_root );
     $self->_write_credential_file;
 
+    my @email = ( $self->email_address ? ( '--email', $self->email_address ) : ( '--register-unsafely-without-email' ) );
     run3([ qw( docker run -v ), $self->domain_root . ":/etc/letsencrypt", qw( -v /var/lib/letsencrypt:/var/lib/letsencrypt ),
-        qw( certbot/dns-linode certonly --register-unsafely-without-email --agree-tos --dns-linode ),
+        qw( certbot/dns-linode certonly --agree-tos --dns-linode ), @email,
         qw( --dns-linode-credentials /etc/letsencrypt/.credentials --dns-linode-propagation-seconds 300 ),
-        @{[ map { ( "-d", $_ ) } ( $self->name, @{$self->domains} ) ]},
+        map { ( "-d", $_ ) } ( $self->name, @{$self->domains} ),
     ]);
 
     $self->_remove_credential_file;
@@ -95,8 +100,8 @@ sub update {
     
     $self->_write_credential_file;
     run3([ qw( docker run -v ), $self->domain_root . ":/etc/letsencrypt", qw( -v /var/lib/letsencrypt:/var/lib/letsencrypt ),
-        qw( certbot/dns-linode renew --register-unsafely-without-email --agree-tos --dns-linode ),
-        qw( --dns-linode-credentials /etc/letsencrypt/.credentials --dns-linode-propagation-seconds 300 ),
+        qw( certbot/dns-linode renew --dns-linode --dns-linode-credentials /etc/letsencrypt/.credentials ),
+        qw( --dns-linode-propagation-seconds 300 ),
     ]);
     $self->_remove_credential_file;
 
