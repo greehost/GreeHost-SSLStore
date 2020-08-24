@@ -4,6 +4,7 @@ use Moo;
 use Module::Runtime qw( use_module );
 use File::Path qw( make_path );
 use IPC::Run3;
+use Time::Moment;
 
 has name => (
     is => 'ro',
@@ -82,7 +83,7 @@ sub install {
 
     my @email = ( $self->email_address ? ( '--email', $self->email_address ) : ( '--register-unsafely-without-email' ) );
     run3([ qw( docker run -v ), $self->domain_root . ":/etc/letsencrypt", qw( -v /var/lib/letsencrypt:/var/lib/letsencrypt ),
-        qw( certbot/dns-linode certonly --agree-tos --dns-linode ), @email,
+        qw( certbot/dns-linode:v1.7.0 certonly --agree-tos --dns-linode --non-interactive ), @email,
         qw( --dns-linode-credentials /etc/letsencrypt/.credentials --dns-linode-propagation-seconds 300 ),
         map { ( "-d", $_ ) } ( $self->name, @{$self->domains} ),
     ]);
@@ -100,7 +101,7 @@ sub update {
     
     $self->_write_credential_file;
     run3([ qw( docker run -v ), $self->domain_root . ":/etc/letsencrypt", qw( -v /var/lib/letsencrypt:/var/lib/letsencrypt ),
-        qw( certbot/dns-linode renew --dns-linode --dns-linode-credentials /etc/letsencrypt/.credentials ),
+        qw( certbot/dns-linode:v1.7.0 renew --dns-linode --dns-linode-credentials /etc/letsencrypt/.credentials ),
         qw( --dns-linode-propagation-seconds 300 ),
     ]);
     $self->_remove_credential_file;
@@ -112,7 +113,7 @@ sub status {
     my ( $self ) = @_;
 
     run3([ qw( docker run -v ), $self->domain_root . ":/etc/letsencrypt", qw( -v /var/lib/letsencrypt:/var/lib/letsencrypt ),
-        qw( certbot/dns-linode certificates ),
+        qw( certbot/dns-linode:v1.7.0 certificates ),
     ], \undef, \my $stdout, \my $stderr);
     $self->_remove_credential_file;
 
