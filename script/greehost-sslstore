@@ -29,6 +29,15 @@ if ( ( $cmd and $cmd =~ /^help$/i ) || ( $opts->{help} ) ) {
     );
 }
 
+if ( -e $opts->{key} ) {
+    open my $lf, '<', $opts->{key}
+        or die "Failed to open " . $opts->{key} . " for reading: $!";
+    my $content = do { local $/; <$lf> };
+    close $lf;
+    chomp($content);
+    $opts->{key} = $content;
+}
+
 if ( my $code = __PACKAGE__->can( "_do_$cmd" ) ) {
     $code->();
     exit 0;
@@ -77,6 +86,7 @@ sub _do_renew {
 
 sub _do_get {
     print "You want to get the SSL information for the domain.\n";
+
 }
 
 =head1 NAME
@@ -107,5 +117,5 @@ sub _do_get {
 
     --name      The top-level domain name for the cert.
     --domain    Additional domain names
-    --key       Linode DNS API Key
+    --key       Linode DNS API Key.  Either the string, or the path to a file that contains ONLY the key.
 
