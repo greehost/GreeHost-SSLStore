@@ -33,21 +33,22 @@ cpanm GreeHost-SSLStore-0.001.tar.gz
 Once installed, add a domain name with the `greehost-sslstore` command:
 
 ```bash
-greehost-sslstore add --name example.com --domain '*.example.com' --domain '*.prd.example.com' --key <linode_dns_api_key>
+greehost-sslstore add --name example.com --domain 'www.example.com' --key linode_dns_key
 ```
 
 ### Arguments
 
-| Setting  | Description                                                                                   |
-|----------|-----------------------------------------------------------------------------------------------|
-| --name   | The root of the domain name, like example.com                                                 |
-| --domain | Any other domain names to have this key work on, for example api.example.com or *.example.com |
-| --key    | Linode API Key for DNS-01 Challenges                                                          |
+| Setting  | Description                                                                                          |
+|----------|------------------------------------------------------------------------------------------------------|
+| --name   | The root of the domain name, like example.com                                                        |
+| --domain | Any other domain names to have this key work on, for example api.example.com or *.example.com        |
+| --key    | Linode API Key for DNS-01 Challenges, either a string or the path to a file that contains the string |
+| --email  | The email address for notifications from Let's Encrypt                                               |
 
 
 ### Updating SSL Certificates
 
-Run `greehost-sslstore renew`
+Run `greehost-sslstore renew --name example.com`
 
 This command should be run from cron on a regular basis.
 
